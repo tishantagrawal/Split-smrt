@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>SplitSmart — Split expenses with friends</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0C0C10;--bg2:#13131A;--bg3:#1C1C28;--bg4:#252535;
+  --border:#2A2A3E;--text:#F0EDE8;--text2:#A09DAA;--text3:#77778F;
+  --accent:#E07A5F;--green:#81B29A;--warn:#F2CC8F;
+  --font-d:'DM Serif Display',serif;--font-b:'Sora',sans-serif;
+}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-text-size-adjust:100%}
+#app{max-width:520px;margin:0 auto;padding:20px 16px 60px;padding-top:max(20px,env(safe-area-inset-top))}
+button{font-family:var(--font-b);cursor:pointer;border:none;color:inherit;background:none}
+input,select{font-family:var(--font-b);font-size:16px;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 14px;width:100%;outline:none}
+input:focus{border-color:var(--accent)}
+input[type=date]{color-scheme:dark}
+
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.back{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:10px 15px;border-radius:11px;font-size:13px;font-weight:600;flex-shrink:0}
+.title{font-family:var(--font-d);font-size:26px;line-height:1.15;overflow-wrap:anywhere}
+.sub{color:var(--text3);font-size:11px;margin-top:2px}
+.lbl{font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.8px;text-transform:uppercase;display:block;margin:20px 0 8px}
+.sec{font-size:12px;color:var(--text3);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:28px 0 10px}
+.hint{font-size:12px;color:var(--text3);line-height:1.6}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:12px}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+
+.btn{display:block;width:100%;padding:15px;border-radius:13px;font-weight:700;font-size:15px;text-align:center}
+.btn-p{background:var(--accent);color:#fff}
+.btn-g{background:var(--green);color:#0C0C10}
+.btn-s{background:var(--bg3);border:1px solid var(--border);color:var(--text)}
+.btn-sm{padding:8px 12px;border-radius:9px;font-size:12px;font-weight:700;background:var(--bg3);border:1px solid var(--border);color:var(--text2);white-space:nowrap}
+.btn-sm.ok{background:rgba(129,178,154,.14);border-color:rgba(129,178,154,.4);color:var(--green)}
+.btn-sm.del{color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:9px 13px;border-radius:999px;font-size:13px;font-weight:600}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.scroll-x{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.scroll-x::-webkit-scrollbar{display:none}
+.scroll-x .chip{flex-shrink:0}
+
+.av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;flex-shrink:0}
+.av.sm{width:28px;height:28px;font-size:11px}
+.pos{color:var(--green)}.neg{color:var(--accent)}.zero{color:var(--text3)}
+.big{font-weight:800;font-size:20px;white-space:nowrap}
+
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 8px;text-align:center}
+.stat b{display:block;font-size:19px;font-weight:800}
+.stat span{font-size:10px;color:var(--text3)}
+
+.mtag{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:5px 12px 5px 5px}
+.mtag .x{color:var(--text3);font-size:15px;padding:0 0 0 4px}
+
+.exp-title{font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.exp-meta{color:var(--text2);font-size:12px;margin-top:3px}
+.exp-split{color:var(--text3);font-size:11px;margin-top:4px;line-height:1.5}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(242,204,143,.14);color:var(--warn);margin-left:6px;vertical-align:middle}
+
+.check{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;background:var(--bg2);width:100%;text-align:left}
+.check.on{border-color:var(--green);background:rgba(129,178,154,.08)}
+.box{width:22px;height:22px;border-radius:7px;border:2px solid var(--text3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#0C0C10;flex-shrink:0}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check input{width:110px;padding:9px 10px;text-align:right}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px}
+.seg button{padding:10px;border-radius:9px;font-size:13px;font-weight:700;color:var(--text2)}
+.seg button.on{background:var(--bg4);color:var(--text)}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.6px;text-transform:uppercase;text-align:right;padding:0 0 10px}
+th:first-child,td:first-child{text-align:left}
+td{padding:11px 0;border-top:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td:first-child{white-space:normal;font-weight:600;padding-right:8px;overflow-wrap:anywhere}
+tfoot td{font-weight:800;color:var(--text2)}
+
+.pay{display:flex;align-items:center;gap:10px}
+.pay .who{font-size:14px;font-weight:600;line-height:1.5}
+.arrow{color:var(--text3);margin:0 4px}
+.line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:7px 0}
+.line span:first-child{color:var(--text2)}
+.due{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.due div{font-size:13px;font-weight:600;padding:4px 0}
+details{margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
+summary{font-size:12px;color:var(--text2);font-weight:600;cursor:pointer}
+details .line{font-size:12px;padding:5px 0}
+
+.share-in{font-size:12px;padding:10px 12px;color:var(--text2)}
+.empty{text-align:center;color:var(--text3);font-size:13px;padding:26px 10px}
+.live{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:6px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,80px);background:var(--bg4);border:1px solid var(--border);padding:12px 18px;border-radius:12px;font-size:13px;font-weight:600;transition:transform .3s;z-index:50;max-width:90vw;text-align:center}
+#toast.show{transform:translate(-50%,0)}
+#loader{position:fixed;inset:0;background:rgba(12,12,16,.7);display:none;align-items:center;justify-content:center;z-index:40;font-size:13px;color:var(--text2)}
+#loader.show{display:flex}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<div id="loader">Loading…</div>
+
+<script>
+/*CORE-START*/
+// All money maths is done in paise (integers) so rounding never drifts.
+function P(x){ return Math.round(Number(x || 0) * 100); }
+
+function equalSplit(amountP, ids){
+  var out = {}, n = ids.length;
+  if (!n) return out;
+  var base = Math.floor(amountP / n), rem = amountP - base * n;
+  for (var i = 0; i < n; i++) { out[ids[i]] = base + (i < rem ? 1 : 0); }
+  return out;
+}
+
+// Per member: paid (from pocket), share (own part of expenses), sent/received (settlements), net.
+function computeHisab(g){
+  var st = {};
+  function get(id){
+    if (!st[id]) st[id] = { paid:0, share:0, sent:0, received:0, net:0 };
+    return st[id];
+  }
+  g.members.forEach(function(m){ get(m.id); });
+  g.expenses.forEach(function(e){
+    get(e.paid_by).paid += P(e.amount);
+    var sp = e.splits || {};
+    Object.keys(sp).forEach(function(uid){ get(uid).share += P(sp[uid]); });
+  });
+  g.settlements.forEach(function(s){
+    get(s.from_member).sent += P(s.amount);
+    get(s.to_member).received += P(s.amount);
+  });
+  Object.keys(st).forEach(function(id){
+    var x = st[id];
+    x.net = x.paid - x.share + x.sent - x.received;
+  });
+  return st;
+}
+
+// Fewest payments: biggest debtor pays biggest creditor, repeat.
+function simplify(st){
+  var pos = [], neg = [];
+  Object.keys(st).forEach(function(id){
+    var n = st[id].net;
+    if (n >= 50) pos.push({ id:id, amt:n });
+    else if (n <= -50) neg.push({ id:id, amt:-n });
+  });
+  pos.sort(function(a,b){ return b.amt - a.amt; });
+  neg.sort(function(a,b){ return b.amt - a.amt; });
+  var tx = [], i = 0, j = 0;
+  while (i < pos.length && j < neg.length) {
+    var v = Math.min(pos[i].amt, neg[j].amt);
+    if (v >= 50) tx.push({ from:neg[j].id, to:pos[i].id, amount:v });
+    pos[i].amt -= v; neg[j].amt -= v;
+    if (pos[i].amt < 50) i++;
+    if (neg[j].amt < 50) j++;
+  }
+  return tx;
+}
+
+function fmt(p){
+  var r = Math.abs(p) / 100;
+  return '₹' + r.toLocaleString('en-IN', { minimumFractionDigits: (Math.round(Math.abs(p)) % 100 === 0) ? 0 : 2, maximumFractionDigits: 2 });
+}
+/*CORE-END*/
+
+var SB  = 'https://owbhcxvmfgebiotdejdp.supabase.co';
+var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YmhjeHZtZmdlYmlvdGRlamRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDIwODksImV4cCI6MjA4ODcxODA4OX0.pqc_eU6agg0Nv-LPGBdHadnq86FUHB5lLKRBPYi_4ZM';
+
+var COLORS = ['#E07A5F','#3D405B','#81B29A','#F2CC8F','#6B9AC4','#C9A96E','#7C6BAF','#E76F51'];
+var EMOJIS = ['✈️','🏖️','🏔️','🏕️','🏠','🍻','🎉','🚗','🚂','🎬'];
+var CATS   = ['🍽️','🏨','🚗','✈️','🛵','🎉','🛒','⛽','🎬','🍻','💊','📦'];
+var LS_KEY = 'splitsmart_groups';
+
+var S = { page:'home', g:null, form:null, cat:'All', emoji:'✈️', snap:'' };
+var localGroups = [];
+
+/* ---------- helpers ---------- */
+function esc(s){ var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML.replace(/"/g,'&quot;'); }
+function $(id){ return document.getElementById(id); }
+function uid(p){ return p + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+function today(){ var d = new Date(); return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
+function toast(msg){ var t = $('toast'); t.textContent = msg; t.className = 'show'; clearTimeout(t._t); t._t = setTimeout(function(){ t.className = ''; }, 2600); }
+function busy(on){ $('loader').className = on ? 'show' : ''; }
+function mName(id){ var m = S.g && S.g.members.filter(function(x){ return x.id === id; })[0]; return m ? m.name : 'Removed member'; }
+function mColor(id){ var i = -1; if (S.g) S.g.members.forEach(function(x,k){ if (x.id === id) i = k; }); return i < 0 ? '#555566' : COLORS[i % COLORS.length]; }
+function avatar(id, small){ var n = mName(id); return '<div class="av' + (small ? ' sm' : '') + '" style="background:' + mColor(id) + '">' + esc(n.charAt(0).toUpperCase()) + '</div>'; }
+function cls(p){ return p >= 50 ? 'pos' : (p <= -50 ? 'neg' : 'zero'); }
+function signed(p){ return Math.abs(p) < 50 ? '₹0' : ((p > 0 ? '+' : '−') + fmt(p)); }
+
+/* ---------- local group list ---------- */
+function loadLocal(){
+  var seen = {};
+  localGroups = [];
+  try {
+    // Also picks up the list saved by older versions of this app, whatever key it used.
+    for (var i = 0; i < localStorage.length; i++) {
+      var raw = localStorage.getItem(localStorage.key(i));
+      if (!raw || raw.charAt(0) !== '[') continue;
+      var arr; try { arr = JSON.parse(raw); } catch (e) { continue; }
+      if (!Array.isArray(arr)) continue;
+      arr.forEach(function(g){
+        if (g && typeof g.id === 'string' && g.id.indexOf('g_') === 0 && !seen[g.id]) {
+          seen[g.id] = 1;
+          localGroups.push({ id:g.id, name:g.name || 'Group', emoji:g.emoji || '✈️' });
+        }
+      });
+    }
+  } catch (e) {}
+}
+function saveLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify(localGroups)); } catch (e) {} }
+function rememberGroup(g){
+  var f = localGroups.filter(function(x){ return x.id === g.id; })[0];
+  if (f) { f.name = g.name; f.emoji = g.emoji; } else localGroups.unshift({ id:g.id, name:g.name, emoji:g.emoji });
+  saveLocal();
+}
+function forgetGroup(id){ localGroups = localGroups.filter(function(x){ return x.id !== id; }); saveLocal(); }
+
+/* ---------- database (plain REST, no SDK) ---------- */
+function api(path, opt){
+  opt = opt || {};
+  opt.headers = { apikey:KEY, Authorization:'Bearer ' + KEY, 'Content-Type':'application/json', Prefer:'return=representation' };
+  return fetch(SB + '/rest/v1/' + path, opt).then(function(r){
+    return r.text().then(function(t){
+      if (!r.ok) throw new Error(t || ('Error ' + r.status));
+      return t ? JSON.parse(t) : null;
+    });
+  });
+}
+function dbInsert(table, row){ return api(table, { method:'POST', body:JSON.stringify(row) }); }
+function dbUpdate(table, id, row){ return api(table + '?id=eq.' + encodeURIComponent(id), { method:'PATCH', body:JSON.stringify(row) }); }
+function dbDelete(table, id){ return api(table + '?id=eq.' + encodeURIComponent(id), { method:'DELETE' }); }
+
+function fetchGroup(id){
+  var q = encodeURIComponent(id);
+  return Promise.all([
+    api('ss_groups?id=eq.' + q + '&select=*'),
+    api('ss_members?group_id=eq.' + q + '&select=*&order=created_at.asc'),
+    api('ss_expenses?group_id=eq.' + q + '&select=*&order=created_at.asc'),
+    api('ss_settlements?group_id=eq.' + q + '&select=*&order=created_at.asc')
+  ]).then(function(r){
+    if (!r[0] || !r[0].length) return null;
+    var g = r[0][0];
+    return { id:g.id, name:g.name, emoji:g.emoji || '✈️', members:r[1] || [], expenses:r[2] || [], settlements:r[3] || [] };
+  });
+}
+function openGroup(id){
+  busy(true);
+  return fetchGroup(id).then(function(g){
+    busy(false);
+    if (!g) { toast('Group not found'); forgetGroup(id); go('home'); return; }
+    S.g = g; S.snap = JSON.stringify(g); S.cat = 'All';
+    rememberGroup(g);
+    go('group');
+  }).catch(function(e){ busy(false); toast('Could not load. Check internet.'); console.error(e); });
+}
+function refresh(){
+  if (!S.g) return Promise.resolve();
+  return fetchGroup(S.g.id).then(function(g){
+    if (!g) return;
+    var snap = JSON.stringify(g);
+    if (snap === S.snap) return;
+    S.g = g; S.snap = snap; rememberGroup(g);
+    if (S.page === 'group' || S.page === 'hisab') render();
+  });
+}
+function run(promise, okMsg){
+  busy(true);
+  return promise.then(function(){ return refresh(); }).then(function(){ busy(false); if (okMsg) toast(okMsg); render(); })
+    .catch(function(e){ busy(false); toast('Failed: ' + (e.message || 'error').slice(0,80)); console.error(e); });
+}
+
+/* ---------- navigation ---------- */
+function go(page){
+  S.page = page;
+  try {
+    var url = location.pathname + ((page !== 'home' && page !== 'newgroup' && S.g) ? ('?group=' + S.g.id) : '');
+    history.replaceState({}, '', url);
+  } catch (e) {}
+  render();
+  window.scrollTo(0, 0);
+}
+function render(){
+  var views = { home:vHome, newgroup:vNewGroup, group:vGroup, expense:vExpense, hisab:vHisab };
+  $('app').innerHTML = views[S.page]();
+  if (S.page === 'expense') updateHint();
+}
+
+/* ---------- views ---------- */
+function vHome(){
+  var h = '<div style="margin:10px 0 26px"><div class="title" style="font-size:34px">SplitSmart</div><div class="hint" style="margin-top:6px">Split trip and daily expenses with friends.</div></div>';
+  h += '<button class="btn btn-p" data-act="go" data-id="newgroup">+ New Group</button>';
+  h += '<div class="sec">Your groups</div>';
+  if (!localGroups.length) h += '<div class="card empty">No groups yet. Create one, or open a link a friend shared.</div>';
+  localGroups.forEach(function(g){
+    h += '<button class="card between" style="width:100%;text-align:left" data-act="open" data-id="' + esc(g.id) + '"><div class="row"><div style="font-size:26px">' + esc(g.emoji) + '</div><div><div style="font-weight:700;font-size:16px">' + esc(g.name) + '</div><div class="sub">Tap to open</div></div></div><div style="color:var(--text3);font-size:22px">›</div></button>';
+  });
+  h += '<button class="btn btn-s" style="margin-top:14px" data-act="join">Join with a link</button>';
+  return h;
+}
+
+function vNewGroup(){
+  var h = '<div class="topbar"><button class="back" data-act="go" data-id="home">← Back</button><div class="title">New Group</div></div><div class="card">';
+  h += '<label class="lbl" style="margin-top:0">Group name</label><input id="g-name" placeholder="e.g. Goa Trip, Flat, Jaipur" maxlength="40"/>';
+  h += '<label class="lbl">Emoji</label><div class="chips">';
+  EMOJIS.forEach(function(e){ h += '<button class="chip' + (e === S.emoji ? ' on' : '') + '" data-act="emoji" data-id="' + e + '">' + e + '</button>'; });
+  h += '</div><button class="btn btn-p" style="margin-top:22px" data-act="creategroup">Create Group</button></div>';
+  return h;
+}
+
+function vGroup(){
+  var g = S.g, st = computeHisab(g), tx = simplify(st);
+  var total = 0; g.expenses.forEach(function(e){ total += P(e.amount); });
+  var link = location.origin + location.pathname + '?group=' + g.id;
+  var h = '<div class="topbar"><button class="back" data-act="go" data-id="home">← Back</button><div class="grow"><div class="title" style="font-size:23px">' + esc(g.emoji) + ' ' + esc(g.name) + '</div><div class="sub"><span class="live"></span>Live · ' + g.members.length + ' member' + (g.members.length === 1 ? '' : 's') + '</div></div></div>';
+
+  h += '<div class="grid3"><div class="stat"><b class="neg">' + fmt(total) + '</b><span>Total spent</span></div><div class="stat"><b class="pos">' + g.expenses.length + '</b><span>Expenses</span></div><div class="stat"><b style="color:' + (tx.length ? 'var(--warn)' : 'var(--green)') + '">' + tx.length + '</b><span>Payments left</span></div></div>';
+
+  h += '<div class="grid2" style="margin-top:12px"><button class="btn btn-p" data-act="addexp">+ Add Expense</button><button class="btn btn-g" data-act="go" data-id="hisab">📊 Full Hisab</button></div>';
+
+  h += '<div class="sec">Members</div><div class="card"><div class="chips">';
+  if (!g.members.length) h += '<span class="hint">No members yet. Add everyone first.</span>';
+  g.members.forEach(function(m){
+    var n = st[m.id].net;
+    h += '<div class="mtag">' + avatar(m.id, true) + '<div><div style="font-size:12px;font-weight:700">' + esc(m.name) + '</div><div class="' + cls(n) + '" style="font-size:10px">' + signed(n) + '</div></div><button class="x" data-act="delmember" data-id="' + esc(m.id) + '" aria-label="Remove">×</button></div>';
+  });
+  h += '</div><div class="row" style="margin-top:14px"><input id="m-name" placeholder="Add member name" maxlength="30"/><button class="btn-sm ok" style="padding:13px 16px" data-act="addmember">Add</button></div></div>';
+
+  h += '<div class="sec">Expenses</div>';
+  if (!g.expenses.length) h += '<div class="card empty">No expenses yet. Add the first one.</div>';
+  else {
+    var cats = {}; g.expenses.forEach(function(e){ cats[e.category || '📦'] = 1; });
+    var list = Object.keys(cats);
+    if (list.length > 1) {
+      h += '<div class="scroll-x" style="margin-bottom:10px">';
+      ['All'].concat(list).forEach(function(c){ h += '<button class="chip' + (c === S.cat ? ' on' : '') + '" data-act="cat" data-id="' + esc(c) + '">' + esc(c) + '</button>'; });
+      h += '</div>';
+    }
+    g.expenses.slice().reverse().forEach(function(e){
+      if (S.cat !== 'All' && (e.category || '📦') !== S.cat) return;
+      var sp = e.splits || {}, ids = Object.keys(sp);
+      var parts = ids.map(function(id){ return esc(mName(id)) + ' ' + fmt(P(sp[id])); }).join(' · ');
+      var badge = (ids.length < g.members.length) ? '<span class="badge">' + ids.length + ' of ' + g.members.length + '</span>' : '';
+      h += '<div class="card"><div class="between" style="align-items:flex-start"><div class="row grow" style="align-items:flex-start"><div style="font-size:24px;line-height:1.1">' + esc(e.category || '📦') + '</div><div class="grow"><div class="exp-title">' + esc(e.description) + badge + '</div><div class="exp-meta">Paid by <b style="color:var(--accent)">' + esc(mName(e.paid_by)) + '</b> · ' + esc(e.date) + '</div><div class="exp-split">Split: ' + parts + '</div></div></div><div style="text-align:right"><div class="big neg" style="font-size:17px">' + fmt(P(e.amount)) + '</div></div></div><div class="row" style="justify-content:flex-end;margin-top:10px;gap:8px"><button class="btn-sm" data-act="editexp" data-id="' + esc(e.id) + '">Edit</button><button class="btn-sm del" data-act="delexp" data-id="' + esc(e.id) + '">Delete</button></div></div>';
+    });
+  }
+
+  h += '<div class="sec">Share with friends</div><div class="card"><div class="hint" style="margin-bottom:10px">Anyone with this link can see and add expenses.</div><div class="row"><input class="share-in" id="share-link" readonly value="' + esc(link) + '"/><button class="btn-sm" style="padding:11px 14px" data-act="copylink">Copy</button></div></div>';
+  h += '<button class="btn" style="margin-top:20px;color:var(--text3);font-size:13px" data-act="delgroup">Delete this group</button>';
+  return h;
+}
+
+function vExpense(){
+  var f = S.form, g = S.g;
+  var h = '<div class="topbar"><button class="back" data-act="go" data-id="group">← Back</button><div class="title">' + (f.id ? 'Edit Expense' : 'Add Expense') + '</div></div><div class="card">';
+  h += '<label class="lbl" style="margin-top:0">What was it for?</label><input id="f-desc" placeholder="e.g. Dinner, Cab, Movie" maxlength="60" value="' + esc(f.desc) + '"/>';
+  h += '<div class="grid2"><div><label class="lbl">Amount (₹)</label><input id="f-amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" value="' + esc(f.amt) + '"/></div><div><label class="lbl">Date</label><input id="f-date" type="date" value="' + esc(f.date) + '"/></div></div>';
+  h += '<label class="lbl">Category</label><div class="scroll-x">';
+  CATS.forEach(function(c){ h += '<button class="chip' + (c === f.cat ? ' on' : '') + '" data-act="fcat" data-id="' + c + '">' + c + '</button>'; });
+  h += '</div>';
+
+  h += '<label class="lbl">Who paid?</label><div class="chips">';
+  g.members.forEach(function(m){ h += '<button class="chip' + (m.id === f.paidBy ? ' on' : '') + '" data-act="fpaid" data-id="' + esc(m.id) + '">' + esc(m.name) + '</button>'; });
+  h += '</div>';
+
+  var nSel = g.members.filter(function(m){ return f.sel[m.id]; }).length;
+  h += '<div class="between" style="margin:20px 0 8px"><span class="lbl" style="margin:0">Split between (' + nSel + ' of ' + g.members.length + ')</span><button class="btn-sm" data-act="fall">' + (nSel === g.members.length ? 'Clear all' : 'Select all') + '</button></div>';
+  h += '<div class="hint" style="margin-bottom:10px">Untick anyone who was not part of this expense. They will not be charged.</div>';
+  h += '<div class="seg" style="margin-bottom:10px"><button class="' + (f.mode === 'equal' ? 'on' : '') + '" data-act="fmode" data-id="equal">Equal split</button><button class="' + (f.mode === 'custom' ? 'on' : '') + '" data-act="fmode" data-id="custom">Custom amounts</button></div>';
+  g.members.forEach(function(m){
+    var on = !!f.sel[m.id];
+    h += '<div class="check' + (on ? ' on' : '') + '" data-act="fsel" data-id="' + esc(m.id) + '"><div class="box">' + (on ? '✓' : '') + '</div>' + avatar(m.id, true) + '<div class="grow" style="font-size:14px;font-weight:600">' + esc(m.name) + '</div>';
+    if (on && f.mode === 'custom') h += '<input type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" data-cust="' + esc(m.id) + '" value="' + esc(f.cust[m.id] || '') + '"/>';
+    else if (on) h += '<span class="hint" data-eq="' + esc(m.id) + '"></span>';
+    h += '</div>';
+  });
+  h += '<div class="hint" id="split-hint" style="margin-top:6px;min-height:20px"></div>';
+  h += '<button class="btn btn-p" style="margin-top:16px" data-act="saveexp">' + (f.id ? 'Save Changes' : 'Add Expense') + '</button></div>';
+  return h;
+}
+
+function vHisab(){
+  var g = S.g, st = computeHisab(g), tx = simplify(st);
+  var tPaid = 0, tShare = 0;
+  var h = '<div class="topbar"><button class="back" data-act="go" data-id="group">← Back</button><div class="grow"><div class="title">📊 Hisab</div><div class="sub">' + esc(g.emoji) + ' ' + esc(g.name) + '</div></div></div>';
+  if (!g.members.length) return h + '<div class="card empty">Add members and expenses to see the hisab.</div>';
+
+  // 1. Who spent how much
+  h += '<div class="sec" style="margin-top:6px">Who spent how much</div><div class="card"><table><thead><tr><th>Name</th><th>Paid</th><th>Own share</th><th>Balance</th></tr></thead><tbody>';
+  g.members.forEach(function(m){
+    var x = st[m.id]; tPaid += x.paid; tShare += x.share;
+    h += '<tr><td>' + esc(m.name) + '</td><td>' + fmt(x.paid) + '</td><td>' + fmt(x.share) + '</td><td class="' + cls(x.net) + '" style="font-weight:800">' + signed(x.net) + '</td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td>Total</td><td>' + fmt(tPaid) + '</td><td>' + fmt(tShare) + '</td><td></td></tr></tfoot></table>';
+  h += '<div class="hint" style="margin-top:12px"><b>Paid</b> = money given from own pocket. <b>Own share</b> = their part of the expenses they were in. <b>Balance</b> = paid minus own share: <span class="pos">+ gets back</span>, <span class="neg">− has to pay</span>.</div></div>';
+
+  // 2. Final settlement
+  h += '<div class="sec">Final settlement: who pays whom</div>';
+  if (!tx.length) h += '<div class="card empty">All settled up 🎉 Nobody owes anything.</div>';
+  tx.forEach(function(t, i){
+    h += '<div class="card pay">' + avatar(t.from) + '<div class="grow who"><span class="neg">' + esc(mName(t.from)) + '</span><span class="arrow">pays</span><span class="pos">' + esc(mName(t.to)) + '</span><div class="big">' + fmt(t.amount) + '</div></div><button class="btn-sm ok" data-act="settle" data-id="' + i + '">Mark paid</button></div>';
+  });
+  if (tx.length) h += '<div class="hint" style="margin:2px 2px 0">These ' + tx.length + ' payment' + (tx.length === 1 ? '' : 's') + ' clear the whole group. Tap “Mark paid” once the money is sent.</div>';
+
+  // 3. Person-wise
+  h += '<div class="sec">Person-wise detail</div>';
+  g.members.forEach(function(m){
+    var x = st[m.id];
+    var label = x.net >= 50 ? 'gets back' : (x.net <= -50 ? 'has to pay' : 'settled');
+    h += '<div class="card"><div class="between"><div class="row">' + avatar(m.id) + '<div><div style="font-weight:700;font-size:16px">' + esc(m.name) + '</div><div class="sub">' + label + '</div></div></div><div class="big ' + cls(x.net) + '">' + signed(x.net) + '</div></div>';
+    h += '<div style="margin-top:12px"><div class="line"><span>Paid from pocket</span><b>' + fmt(x.paid) + '</b></div><div class="line"><span>Own share of expenses</span><b>' + fmt(x.share) + '</b></div>';
+    if (x.sent) h += '<div class="line"><span>Already paid back to others</span><b>' + fmt(x.sent) + '</b></div>';
+    if (x.received) h += '<div class="line"><span>Already received from others</span><b>' + fmt(x.received) + '</b></div>';
+    h += '</div>';
+    var dues = '';
+    tx.forEach(function(t){
+      if (t.from === m.id) dues += '<div class="neg">Has to give ' + fmt(t.amount) + ' to ' + esc(mName(t.to)) + '</div>';
+      if (t.to === m.id) dues += '<div class="pos">Will get ' + fmt(t.amount) + ' from ' + esc(mName(t.from)) + '</div>';
+    });
+    h += '<div class="due">' + (dues || '<div class="zero">Nothing to give or take</div>') + '</div>';
+    var rows = '', cnt = 0;
+    g.expenses.forEach(function(e){
+      var sp = e.splits || {}, mine = sp[m.id] != null, paid = e.paid_by === m.id;
+      if (!mine && !paid) return;
+      cnt++;
+      var bits = [];
+      if (paid) bits.push('paid ' + fmt(P(e.amount)));
+      bits.push(mine ? ('share ' + fmt(P(sp[m.id]))) : 'not in split');
+      rows += '<div class="line"><span>' + esc(e.description) + ' <span class="zero">· ' + esc(e.date) + '</span></span><span style="text-align:right">' + bits.join(' · ') + '</span></div>';
+    });
+    if (cnt) h += '<details><summary>See ' + cnt + ' expense' + (cnt === 1 ? '' : 's') + '</summary>' + rows + '</details>';
+    h += '</div>';
+  });
+
+  // 4. Payments already done
+  if (g.settlements.length) {
+    h += '<div class="sec">Payments already done</div>';
+    g.settlements.slice().reverse().forEach(function(s){
+      h += '<div class="card between"><div style="font-size:13px"><b>' + esc(mName(s.from_member)) + '</b> paid <b>' + esc(mName(s.to_member)) + '</b> ' + fmt(P(s.amount)) + '<div class="sub">' + esc(s.date) + '</div></div><button class="btn-sm" data-act="undosettle" data-id="' + esc(s.id) + '">Undo</button></div>';
+    });
+  }
+
+  h += '<div class="grid2" style="margin-top:22px"><button class="btn btn-s" data-act="copyhisab">📋 Copy hisab</button><button class="btn btn-g" data-act="wahisab">Send on WhatsApp</button></div>';
+  return h;
+}
+
+/* ---------- expense form ---------- */
+function newForm(e){
+  var g = S.g, f = { id:null, desc:'', amt:'', date:today(), cat:'🍽️', paidBy:(g.members[0] || {}).id, mode:'equal', sel:{}, cust:{} };
+  g.members.forEach(function(m){ f.sel[m.id] = true; });
+  if (e) {
+    var sp = e.splits || {}, ids = Object.keys(sp), vals = ids.map(function(k){ return P(sp[k]); });
+    f.id = e.id; f.desc = e.description; f.amt = String(Number(e.amount)); f.date = e.date; f.cat = e.category || '📦'; f.paidBy = e.paid_by;
+    g.members.forEach(function(m){ f.sel[m.id] = sp[m.id] != null; });
+    var sum = vals.reduce(function(a,b){ return a + b; }, 0);
+    var isEqual = vals.length > 0 && (Math.max.apply(null, vals) - Math.min.apply(null, vals) <= 1) && Math.abs(sum - P(e.amount)) <= vals.length;
+    f.mode = isEqual ? 'equal' : 'custom';
+    ids.forEach(function(k){ f.cust[k] = String(Number(sp[k])); });
+  }
+  return f;
+}
+function syncForm(){
+  var f = S.form; if (!f || S.page !== 'expense') return;
+  if ($('f-desc')) f.desc = $('f-desc').value;
+  if ($('f-amt')) f.amt = $('f-amt').value;
+  if ($('f-date')) f.date = $('f-date').value;
+  var ins = document.querySelectorAll('[data-cust]');
+  for (var i = 0; i < ins.length; i++) f.cust[ins[i].getAttribute('data-cust')] = ins[i].value;
+}
+function selectedIds(){ var f = S.form; return S.g.members.filter(function(m){ return f.sel[m.id]; }).map(function(m){ return m.id; }); }
+function updateHint(){
+  var f = S.form, el = $('split-hint'); if (!el) return;
+  syncForm();
+  var ids = selectedIds(), amt = P(f.amt);
+  if (!ids.length) { el.innerHTML = '<span class="neg">Select at least one person.</span>'; return; }
+  if (f.mode === 'equal') {
+    var eq = equalSplit(amt, ids), spans = document.querySelectorAll('[data-eq]');
+    for (var i = 0; i < spans.length; i++) spans[i].textContent = amt > 0 ? fmt(eq[spans[i].getAttribute('data-eq')]) : '';
+    el.textContent = amt > 0 ? (fmt(amt) + ' split equally between ' + ids.length + (ids.length === 1 ? ' person' : ' people')) : '';
+  } else {
+    var sum = 0; ids.forEach(function(id){ sum += P(f.cust[id]); });
+    var left = amt - sum;
+    el.innerHTML = left === 0 ? '<span class="pos">Amounts add up ✓</span>' : (left > 0 ? '<span class="neg">' + fmt(left) + ' still left to assign</span>' : '<span class="neg">' + fmt(left) + ' more than the amount</span>');
+  }
+}
+function saveExpense(){
+  syncForm();
+  var f = S.form, g = S.g, ids = selectedIds(), amt = P(f.amt);
+  if (!f.desc.trim()) return toast('Enter what it was for');
+  if (!(amt > 0)) return toast('Enter the amount');
+  if (!f.paidBy) return toast('Select who paid');
+  if (!ids.length) return toast('Select who shares this expense');
+  var splitP = {};
+  if (f.mode === 'equal') splitP = equalSplit(amt, ids);
+  else {
+    var sum = 0;
+    ids.forEach(function(id){ var v = P(f.cust[id]); if (v > 0) { splitP[id] = v; sum += v; } });
+    if (sum !== amt) return toast('Custom amounts must add up to ' + fmt(amt));
+  }
+  var splits = {}; Object.keys(splitP).forEach(function(id){ splits[id] = splitP[id] / 100; });
+  var row = { group_id:g.id, description:f.desc.trim(), amount:amt / 100, paid_by:f.paidBy, splits:splits, category:f.cat, date:f.date || today() };
+  var p;
+  if (f.id) p = dbUpdate('ss_expenses', f.id, row); else { row.id = uid('e'); p = dbInsert('ss_expenses', row); }
+  S.page = 'group';
+  run(p, f.id ? 'Expense updated' : 'Expense added').then(function(){ window.scrollTo(0, 0); });
+}
+
+/* ---------- hisab as text ---------- */
+function hisabText(){
+  var g = S.g, st = computeHisab(g), tx = simplify(st), total = 0;
+  g.expenses.forEach(function(e){ total += P(e.amount); });
+  var t = '*' + g.name + ' — Hisab*\nTotal spent: ' + fmt(total) + '\n\n';
+  g.members.forEach(function(m){
+    var x = st[m.id];
+    t += m.name + ': paid ' + fmt(x.paid) + ', own share ' + fmt(x.share) + ' → ' + (x.net >= 50 ? 'gets back ' + fmt(x.net) : (x.net <= -50 ? 'has to pay ' + fmt(x.net) : 'settled')) + '\n';
+  });
+  t += '\n*Who pays whom*\n';
+  if (!tx.length) t += 'All settled up.\n';
+  tx.forEach(function(x){ t += mName(x.from) + ' → ' + mName(x.to) + ': ' + fmt(x.amount) + '\n'; });
+  return t;
+}
+function copyText(text, msg){
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function(){ toast(msg); }, function(){ toast('Could not copy'); });
+  else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast(msg); } catch (e) { toast('Could not copy'); } document.body.removeChild(ta); }
+}
+
+/* ---------- actions ---------- */
+function addMember(){
+  var name = ($('m-name').value || '').trim();
+  if (!name) return toast('Enter a name');
+  run(dbInsert('ss_members', { id:uid('m'), group_id:S.g.id, name:name }), name + ' added');
+}
+document.addEventListener('click', function(ev){
+  var el = ev.target.closest('[data-act]'); if (!el) return;
+  if (ev.target.tagName === 'INPUT') return;           // typing a custom amount should not toggle the row
+  var act = el.getAttribute('data-act'), id = el.getAttribute('data-id'), g = S.g, f = S.form;
+  switch (act) {
+    case 'go': go(id); break;
+    case 'open': openGroup(id); break;
+    case 'join':
+      var url = prompt('Paste the group link here:'); if (!url) break;
+      var m = /[?&]group=([^&#\s]+)/.exec(url);
+      if (m) openGroup(decodeURIComponent(m[1])); else toast('That link does not look right');
+      break;
+    case 'emoji': S.emoji = id; var nm = $('g-name').value; render(); $('g-name').value = nm; break;
+    case 'creategroup':
+      var name = ($('g-name').value || '').trim(); if (!name) { toast('Enter a group name'); break; }
+      var gid = uid('g'); busy(true);
+      dbInsert('ss_groups', { id:gid, name:name, emoji:S.emoji }).then(function(){ return openGroup(gid); }).catch(function(e){ busy(false); toast('Could not create group'); console.error(e); });
+      break;
+    case 'addmember': addMember(); break;
+    case 'delmember':
+      var used = g.expenses.some(function(e){ return e.paid_by === id || (e.splits || {})[id] != null; }) || g.settlements.some(function(s){ return s.from_member === id || s.to_member === id; });
+      if (used) { toast(mName(id) + ' is part of expenses, so cannot be removed'); break; }
+      if (confirm('Remove ' + mName(id) + ' from this group?')) run(dbDelete('ss_members', id), 'Member removed');
+      break;
+    case 'cat': S.cat = id; render(); break;
+    case 'addexp':
+      if (g.members.length < 1) { toast('Add members first'); break; }
+      S.form = newForm(null); go('expense'); break;
+    case 'editexp':
+      var ex = g.expenses.filter(function(e){ return e.id === id; })[0]; if (!ex) break;
+      S.form = newForm(ex); go('expense'); break;
+    case 'delexp':
+      if (confirm('Delete this expense?')) run(dbDelete('ss_expenses', id), 'Expense deleted');
+      break;
+    case 'fcat': syncForm(); f.cat = id; render(); break;
+    case 'fpaid': syncForm(); f.paidBy = id; render(); break;
+    case 'fmode': syncForm(); f.mode = id; render(); break;
+    case 'fsel': syncForm(); f.sel[id] = !f.sel[id]; render(); break;
+    case 'fall':
+      syncForm();
+      var all = g.members.every(function(m){ return f.sel[m.id]; });
+      g.members.forEach(function(m){ f.sel[m.id] = !all; });
+      render(); break;
+    case 'saveexp': saveExpense(); break;
+    case 'copylink': copyText($('share-link').value, 'Link copied'); break;
+    case 'delgroup':
+      if (confirm('Delete "' + g.name + '" and all its expenses for everyone? This cannot be undone.')) {
+        busy(true);
+        dbDelete('ss_groups', g.id).then(function(){ busy(false); forgetGroup(g.id); S.g = null; toast('Group deleted'); go('home'); })
+          .catch(function(e){ busy(false); toast('Could not delete'); console.error(e); });
+      }
+      break;
+    case 'settle':
+      var t = simplify(computeHisab(g))[Number(id)]; if (!t) break;
+      if (confirm('Mark as paid: ' + mName(t.from) + ' paid ' + fmt(t.amount) + ' to ' + mName(t.to) + '?'))
+        run(dbInsert('ss_settlements', { id:uid('s'), group_id:g.id, from_member:t.from, to_member:t.to, amount:t.amount / 100, date:today() }), 'Marked as paid');
+      break;
+    case 'undosettle':
+      if (confirm('Undo this payment?')) run(dbDelete('ss_settlements', id), 'Payment undone');
+      break;
+    case 'copyhisab': copyText(hisabText(), 'Hisab copied'); break;
+    case 'wahisab': window.open('https://wa.me/?text=' + encodeURIComponent(hisabText()), '_blank'); break;
+  }
+});
+document.addEventListener('input', function(ev){ if (S.page === 'expense' && ev.target.tagName === 'INPUT') updateHint(); });
+document.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' && ev.target.id === 'm-name') addMember(); });
+
+// Keep everyone's screen in sync.
+setInterval(function(){
+  if (!S.g || (S.page !== 'group' && S.page !== 'hisab')) return;
+  var a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+  refresh().catch(function(){});
+}, 8000);
+
+/* ---------- start ---------- */
+loadLocal();
+(function(){
+  var m = /[?&]group=([^&#]+)/.exec(location.search);
+  if (m) openGroup(decodeURIComponent(m[1])); else render();
+})();
+</script>
+</body>
+</html>
